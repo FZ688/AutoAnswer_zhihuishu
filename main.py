@@ -13,7 +13,7 @@ from playwright.sync_api import (
 from configs import Config
 from logger import Logger
 from crawler import crawl_hotest_question, crawl_latest_question
-from answer import process_questions
+from answer import answer
 import time
 
 config = Config()
@@ -89,18 +89,6 @@ def login(page: Page) -> Page:
         raise
 
 
-def upload_answer(page: Page, q: str, a: str) -> None:
-    with page.expect_popup() as page2_info:
-        page.get_by_text(q).click()
-    page2 = page2_info.value
-    page2.locator("div").filter(has_text="我来回答").nth(2).click()
-    time.sleep(config.delay_time_s)
-    page2.get_by_role("textbox", name="请输入您的回答").click()
-    page2.get_by_role("textbox", name="请输入您的回答").fill(a)
-    page2.get_by_text("立即发布").click()
-    page2.close()
-
-
 def main():
     with sync_playwright() as playwright:
         try:
@@ -118,12 +106,7 @@ def main():
                 try:
                     logger.info(f"开始处理课程 {index+1}/{len(config.courses)}")
                     questions = crawl_latest_question(page, course_url)
-                    answers = process_questions(questions)
-                    for q, a in zip(questions, answers):
-                        upload_answer(page, q, a)
-                        print(f"问题: {q}")
-                        print(f"回答: {a}")
-                        print("-" * 50)
+                    answer(page, questions)
                     logger.info(f"成功完成课程: {course_url}")
                 except Exception as e:
                     logger.error(f"课程处理失败: {course_url} - {str(e)}")

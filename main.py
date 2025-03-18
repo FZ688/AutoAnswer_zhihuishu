@@ -35,7 +35,10 @@ def open_browser(playwright) -> tuple[Browser, BrowserContext]:
             channel=config.driver,  # 使用配置中指定的浏览器渠道
             headless=False,  # 可视化模式运行
             args=[
-                "--disable-blink-features=AutomationControlled"
+                "--disable-backgrounding-occluded-windows",
+                "--disable-renderer-backgrounding",
+                "--start-minimized"  # 启动时最小化
+                "--disable-blink-features=AutomationControlled",
             ],  # 禁用自动化检测特征
         )
         # 创建新的浏览器上下文

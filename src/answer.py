@@ -81,12 +81,13 @@ def open_answer_page(page: Page, question: str) -> Page | None:
 def check_had_answered(page: Page) -> bool:
     # 等待页面加载完成，确保所有网络请求都已完成
     page.wait_for_load_state("networkidle")
-    
+
     if not page.locator("div").filter(has_text="我来回答").nth(2).is_visible():
         logger.warn("没有找到“我来回答”按钮，你可能已经回答了。")
         return True
     else:
         return False
+
 
 def click_answer_button(page2: Page) -> bool:
     """点击“我来回答”按钮"""
@@ -134,12 +135,12 @@ def answer(page: Page, questions: list[str]) -> None:
             continue
 
 
-# if __name__ == "__main__":
-#     # 示例：测试 answer 函数
-#     test_questions = ["你好，世界！", "今天天气如何？", "什么是人工智能？"]
+if __name__ == "__main__":
+    # 测试
+    test_questions = ["你好，世界！", "今天天气如何？", "什么是人工智能？"]
 
-#     answers = process_questions(test_questions)
+    answers = process_questions(test_questions)
 
-#     for q, a in zip(test_questions, answers):
-#         print(f"问题: {q}")
-#         print(f"回答: {a}\n")
+    for q, a in zip(test_questions, answers):
+        print(f"问题: {q}")
+        print(f"回答: {a}\n")

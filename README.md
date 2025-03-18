@@ -21,6 +21,8 @@ pip install -r requirements.txt
 
 ### 📁 配置文件结构
 
+⚠️ 对象键值对使用冒号结构表示 key: value，冒号后面要加一个空格。
+
 ```yaml
 # config.yaml
 user:
@@ -35,7 +37,7 @@ option:
   question_classification: 0
 
 question-urls:
-  - https://qah5.zhihuishu.com/qa.html#/web/home/1000076713
+  - https://qah5.zhihuishu.com/........
   - https://其他课程URL...
 
 OpenAI:

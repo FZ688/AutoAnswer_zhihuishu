@@ -28,7 +28,9 @@ def get_answer(question: str) -> str:
         )
         ans: str = completion.choices[0].message.content
         logger.info("请求成功！")
-        return re.sub(r"<think>.*?</think>", "", ans, flags=re.DOTALL).strip()
+        ans = re.sub(r"<think>.*?</think>", "", ans, flags=re.DOTALL).strip()
+        logger.info(f"回答：{ans}")
+        return ans
     except Exception as e:
         logger.error(f"API请求失败: {str(e)}")
         return "当前服务暂不可用，请稍后再试"
@@ -44,38 +46,81 @@ def process_questions(questions: list) -> list:
     return answers
 
 
-def upload_answer(page: Page, q: str, a: str) -> bool:
-    """
-    上传回答的函数，返回是否成功
-    """
-    try:
-        with page.expect_popup() as page2_info:
-            page.get_by_text(q).click()
-        page2 = page2_info.value
+def upload_answer(page: Page, q: str) -> bool:
+    """协调各个步骤的上传回答流程"""
+    page2 = open_answer_page(page, q)
+    if not page2:
+        return False
 
-        # 尝试点击“我来回答”，如果超时则跳过
-        try:
-            page2.locator("div").filter(has_text="我来回答").nth(2).click()
-        except Exception as e:
-            logger.error(f"点击“我来回答”失败: {e}")
-            page2.close()
+    try:
+        if check_had_answered(page2):
+            return False
+        elif not click_answer_button(page2):
+            return False
+        a: str = get_answer(q)
+        if not fill_answer_content(page2, a):
             return False
 
-        # 填写回答
+        return submit_answer(page2)
+    finally:
+        # 确保无论成功与否都会关闭页面（如果未被提前关闭）
+        if "page2" in locals() and page2:
+            page2.close()
+
+
+def open_answer_page(page: Page, question: str) -> Page | None:
+    try:
+        with page.expect_popup() as page2_info:
+            page.get_by_text(question).click()
+        return page2_info.value
+    except Exception as e:
+        logger.error(f"打开回答页面失败: {e}")
+        return None
+
+
+def check_had_answered(page: Page) -> bool:
+    # 等待页面加载完成，确保所有网络请求都已完成
+    page.wait_for_load_state("networkidle")
+    
+    if not page.locator("div").filter(has_text="我来回答").nth(2).is_visible():
+        logger.warn("没有找到“我来回答”按钮，你可能已经回答了。")
+        return True
+    else:
+        return False
+
+def click_answer_button(page2: Page) -> bool:
+    """点击“我来回答”按钮"""
+    try:
+        page2.locator("div").filter(has_text="我来回答").nth(2).click()
+        return True
+    except Exception as e:
+        logger.error(f"点击“我来回答”失败: {e}")
+        return False
+
+
+def fill_answer_content(page2: Page, answer: str) -> bool:
+    """填写回答内容"""
+    try:
         textbox = page2.get_by_role("textbox", name="请输入您的回答")
         textbox.click()
         time.sleep(get_random(config.delay_time_s) // 2)
-        textbox.fill(a)
+        textbox.fill(answer)
         time.sleep(get_random(config.delay_time_s) // 2)
+        return True
+    except Exception as e:
+        logger.error(f"填写回答失败: {e}")
+        return False
 
-        # 点击“立即发布”
+
+def submit_answer(page2: Page) -> bool:
+    """提交回答并关闭页面"""
+    try:
         page2.get_by_text("立即发布").click()
         page2.close()
         return True
     except Exception as e:
-        logger.error(f"上传回答失败: {e}")
-        if "page2" in locals():
-            page2.close()
+        logger.error(f"提交回答失败: {e}")
+        page2.close()
         return False
 
 
@@ -84,11 +129,7 @@ def answer(page: Page, questions: list[str]) -> None:
     for index, question in enumerate(questions, start=1):
         logger.info(f"处理中：{index}/{total_questions}")
         logger.info(f"问题{index}：{question}")
-        answer_text: str = get_answer(question)
-        logger.info(f"回答{index}：{answer_text}")
-
-        # 尝试上传回答，如果失败则跳过
-        if not upload_answer(page, question, answer_text):
+        if not upload_answer(page, question):
             logger.warn(f"问题{index}处理失败，跳过")
             continue
 

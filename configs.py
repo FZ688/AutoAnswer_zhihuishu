@@ -19,12 +19,19 @@ class Config:
         self.driver: str = str(config["option"]["driver"])
         self.browser_path: str | None = str(config["option"].get("browser_path", None))
         self.delay_time_s: int = int(config["option"]["delay_time_s"])
+        self.enabled_random_time: bool = config["option"]["enabled_random_time"]
+        self.question_classification: int = int(
+            config["option"]["question_classification"]
+        )
+
         self.courses: list = config["question-urls"]
 
         # 添加 OpenAI 配置
         self.openai_base_url: str = config["OpenAI"]["base_url"]
         self.openai_api_key: str = config["OpenAI"]["api_key"]
         self.openai_model: str = config["OpenAI"]["model"]
+        self.max_tokens: int = int(config["OpenAI"]["max_tokens"])
+        self.temperature: float = float(config["OpenAI"]["temperature"])
 
     def loading_config(self) -> dict | None:
         try:

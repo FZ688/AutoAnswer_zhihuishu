@@ -105,7 +105,10 @@ def main():
                 page = context.new_page()
                 try:
                     logger.info(f"开始处理课程 {index+1}/{len(config.courses)}")
-                    questions = crawl_latest_question(page, course_url)
+                    if config.question_classification == 0:
+                        questions = crawl_hotest_question(page, course_url)
+                    else:
+                        questions = crawl_latest_question(page, course_url)
                     answer(page, questions)
                     logger.info(f"成功完成课程: {course_url}")
                 except Exception as e:

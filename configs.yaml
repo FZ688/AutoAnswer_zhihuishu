@@ -1,10 +1,13 @@
 user:
-  name:
-  password:
+  name: 
+  password: 
 option:
   driver: msedge # Use "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge", "msedge-beta", "msedge-dev", or "msedge-canary" to use branded Google Chrome and Microsoft Edge.
   browser_path:
-  delay_time_s: 20
+  delay_time_s: 10
+  enabled_random_time: True
+  question_classification: 0 #0代表热门，1代表最新
+
 question-urls:
   - https://qah5.zhihuishu.com/qa.html#/web/home/1000076713?role=2&recruitId=302475
   - https://qah5.zhihuishu.com/qa.html#/web/home/1000060156?role=2&recruitId=307596
@@ -14,4 +17,6 @@ question-urls:
 OpenAI:
   base_url: "http://localhost:11434/v1"
   api_key: "ollama"
-  model: "deepseek-r1:1.5b"
+  model: "deepseek-r1:latest"
+  max_tokens: 1000
+  temperature: 0.3

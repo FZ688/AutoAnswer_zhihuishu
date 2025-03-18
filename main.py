@@ -122,6 +122,21 @@ def main():
         finally:
             context.close()
             browser.close()
+            print(
+                """
+   ╱|、　　　　　　　　　　　ฅ^•ﻌ•^ฅ
+  (˚ˎ 。7　　　　　　　　　　 喵喵感谢~
+   |、˜〵　　　　　　　　　 求星星啦~⭐
+   じしˍ,)ノ
+问答任务已完成 [✓]
+☆ *　. 　☆ ✨ 传送门 ➤https://github.com/xiaozhuABCD1234/AutoAnswer_zhihuishu
+　　. ∧＿∧　∩　* ☆ 主人记得给仓库加个星星哦～⭐
+* ☆ ( ・∀・)/ .
+　. ⊂　　 ノ* ☆
+☆ * (つ ノ .☆
+　　 (ノ
+"""
+            )
 
 
 if __name__ == "__main__":

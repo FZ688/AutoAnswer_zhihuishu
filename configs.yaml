@@ -15,8 +15,8 @@ question-urls:
   - 
 
 OpenAI:
-  base_url: "http://localhost:11434/v1"
-  api_key: "ollama"
-  model: "deepseek-r1:latest"
+  base_url: "https://api.suanli.cn/v1"
+  api_key: "sk-W0rpStc95T7JVYVwDYc29IyirjtpPPby6SozFMQr17m8KWeo"
+  model: "free:QwQ-32B"
   max_tokens: 1000
   temperature: 0.3

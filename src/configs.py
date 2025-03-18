@@ -35,7 +35,7 @@ class Config:
 
     def loading_config(self) -> dict | None:
         try:
-            with open("configs.yaml", "r") as f:
+            with open("configs.yaml", "r", encoding="utf-8") as f:
                 data = yaml.load(f, Loader=yaml.FullLoader)
                 if not data:
                     Logger().error("YAML 文件为空或格式不正确。")

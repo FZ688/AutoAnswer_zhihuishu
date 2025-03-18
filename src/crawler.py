@@ -2,12 +2,12 @@ from playwright.sync_api import (
     sync_playwright,
     Page,
 )
-from logger import Logger
+from src.logger import Logger
 
 logger = Logger()
 
 
-def crawl_hotest_question(page: Page, url: str) -> list[str]:
+def crawl_popular_question(page: Page, url: str) -> list[str]:
     """爬取热门问题
     Args:
         page: 已登录的页面对象

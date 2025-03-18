@@ -1,5 +1,5 @@
 import yaml
-from logger import Logger
+from src.logger import Logger
 import sys
 
 

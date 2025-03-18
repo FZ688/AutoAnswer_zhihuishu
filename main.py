@@ -10,10 +10,10 @@ from playwright.sync_api import (
 )
 
 # from playwright.async_api import async_playwright, Page
-from configs import Config
-from logger import Logger
-from crawler import crawl_hotest_question, crawl_latest_question
-from answer import answer
+from src.configs import Config
+from src.logger import Logger
+from src.crawler import crawl_popular_question, crawl_latest_question
+from src.answer import answer
 import time
 
 config = Config()
@@ -41,7 +41,7 @@ def open_browser(playwright) -> tuple[Browser, BrowserContext]:
         # 创建新的浏览器上下文
         context = browser.new_context()
         # 加载反检测脚本（避免被识别为自动化工具）
-        with open("stealth.min.js", "r", encoding="utf-8") as f:
+        with open("scripts/stealth.min.js", "r", encoding="utf-8") as f:
             stealth_js = f.read()
         context.add_init_script(stealth_js)
         return browser, context
@@ -106,7 +106,7 @@ def main():
                 try:
                     logger.info(f"开始处理课程 {index+1}/{len(config.courses)}")
                     if config.question_classification == 0:
-                        questions = crawl_hotest_question(page, course_url)
+                        questions = crawl_popular_question(page, course_url)
                     else:
                         questions = crawl_latest_question(page, course_url)
                     answer(page, questions)

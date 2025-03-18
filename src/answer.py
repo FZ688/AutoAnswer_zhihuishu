@@ -1,10 +1,10 @@
 from openai import OpenAI
 import re
-from logger import Logger
-from configs import Config
+from src.logger import Logger
+from src.configs import Config
 import time
 from playwright.sync_api import Page
-from utils import get_random
+from src.utils import get_random
 
 logger = Logger()
 config = Config()

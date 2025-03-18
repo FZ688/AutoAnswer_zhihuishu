@@ -114,3 +114,6 @@ OpenAI:
 ```bash
   python ./main.py
 ```
+
+或者可以用
+start 脚本

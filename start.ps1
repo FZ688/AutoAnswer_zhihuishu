@@ -18,7 +18,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 更新 pip
-python -m pip install --upgrade pip
+python -m pip install -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --upgrade pip
 if ($LASTEXITCODE -ne 0) {
     Write-Error "更新 pip 失败"
     exit 1

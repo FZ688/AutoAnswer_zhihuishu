@@ -16,7 +16,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 REM 更新 pip
-python -m pip install --upgrade pip
+python -m pip install -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --upgrade pip
 if %ERRORLEVEL% neq 0 (
     echo 更新 pip 失败
     exit /b 1

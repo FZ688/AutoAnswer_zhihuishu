@@ -6,8 +6,8 @@ python>=3.10
 
 ```bash
 python -m pip install -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple --upgrade pip
-pip install -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple some-package
-pip install -r requiremnts.txt
+pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+pip install -r requirements.txt
 ```
 
 ## 配置指南

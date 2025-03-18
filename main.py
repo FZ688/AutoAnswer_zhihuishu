@@ -1,0 +1,139 @@
+import re
+import asyncio
+from playwright.sync_api import (
+    sync_playwright,
+    Page,
+    Playwright,
+    Browser,
+    Locator,
+    BrowserContext,
+)
+
+# from playwright.async_api import async_playwright, Page
+from configs import Config
+from logger import Logger
+from crawler import crawl_hotest_question, crawl_latest_question
+from answer import process_questions
+import time
+
+config = Config()
+logger = Logger()
+
+
+def open_browser(playwright) -> tuple[Browser, BrowserContext]:
+    """启动浏览器并返回浏览器和上下文对象
+    Args:
+        playwright: Playwright实例
+    Returns:
+        tuple: 包含浏览器实例和上下文对象的元组
+    Raises:
+        Exception: 浏览器启动失败时抛出异常
+    """
+    try:
+        # 使用Chromium内核启动浏览器
+        browser = playwright.chromium.launch(
+            channel=config.driver,  # 使用配置中指定的浏览器渠道
+            headless=False,  # 可视化模式运行
+            args=[
+                "--disable-blink-features=AutomationControlled"
+            ],  # 禁用自动化检测特征
+        )
+        # 创建新的浏览器上下文
+        context = browser.new_context()
+        # 加载反检测脚本（避免被识别为自动化工具）
+        with open("stealth.min.js", "r", encoding="utf-8") as f:
+            stealth_js = f.read()
+        context.add_init_script(stealth_js)
+        return browser, context
+    except Exception as e:
+        logger.error(f"浏览器启动失败: {e}")
+        raise
+
+
+def login(page: Page) -> Page:
+    """登录到智慧树网
+    Args:
+        page: Playwright页面对象
+    Returns:
+        Page: 登录成功后的页面对象
+    Raises:
+        TimeoutError: 操作超时时抛出
+        Exception: 登录失败时抛出
+    """
+    try:
+        # 访问登录页面（设置30秒超时）
+        page.goto(config.login_url, timeout=30000)
+        # 定位未登录状态的登录链接并点击
+        login_link = page.locator("#notLogin").get_by_role("link").first
+        login_link.click(timeout=10000)
+
+        # 填写用户名和密码
+        username_input = page.get_by_role("textbox", name="请输入手机号")
+        username_input.fill(str(config.username), timeout=5000)
+        password_input = page.get_by_role("textbox", name="请输入密码")
+        password_input.fill(str(config.password), timeout=5000)
+
+        # 点击登录按钮
+        page.get_by_text("登 录").click(timeout=5000)
+        logger.warn("请手动完成验证码验证！")  # 需要人工干预验证码
+
+        # 等待网络空闲（最长等待60秒）
+        page.wait_for_load_state("networkidle", timeout=60000)
+        logger.info("登录成功！")
+        return page
+    except TimeoutError as e:
+        logger.error(f"登录超时: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"登录失败: {e}")
+        raise
+
+
+def upload_answer(page: Page, q: str, a: str) -> None:
+    with page.expect_popup() as page2_info:
+        page.get_by_text(q).click()
+    page2 = page2_info.value
+    page2.locator("div").filter(has_text="我来回答").nth(2).click()
+    time.sleep(config.delay_time_s)
+    page2.get_by_role("textbox", name="请输入您的回答").click()
+    page2.get_by_role("textbox", name="请输入您的回答").fill(a)
+    page2.get_by_text("立即发布").click()
+    page2.close()
+
+
+def main():
+    with sync_playwright() as playwright:
+        try:
+            # 初始化浏览器
+            browser, context = open_browser(playwright)
+
+            # 登录操作
+            login_page = context.new_page()
+            login(login_page)
+            login_page.close()
+
+            # 遍历课程
+            for index, course_url in enumerate(config.courses):
+                page = context.new_page()
+                try:
+                    logger.info(f"开始处理课程 {index+1}/{len(config.courses)}")
+                    questions = crawl_latest_question(page, course_url)
+                    answers = process_questions(questions)
+                    for q, a in zip(questions, answers):
+                        upload_answer(page, q, a)
+                        print(f"问题: {q}")
+                        print(f"回答: {a}")
+                        print("-" * 50)
+                    logger.info(f"成功完成课程: {course_url}")
+                except Exception as e:
+                    logger.error(f"课程处理失败: {course_url} - {str(e)}")
+                finally:
+                    page.close()
+
+        finally:
+            context.close()
+            browser.close()
+
+
+if __name__ == "__main__":
+    main()

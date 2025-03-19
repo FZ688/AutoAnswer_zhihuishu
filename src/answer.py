@@ -104,9 +104,15 @@ def fill_answer_content(page2: Page, answer: str) -> bool:
     try:
         textbox = page2.get_by_role("textbox", name="请输入您的回答")
         textbox.click()
-        time.sleep(get_random(config.delay_time_s) // 2)
+        if config.enabled_random_time:
+            time.sleep(get_random(config.delay_time_s) // 2)
+        else:
+            time.sleep(config.delay_time_s // 2)
         textbox.fill(answer)
-        time.sleep(get_random(config.delay_time_s) // 2)
+        if config.enabled_random_time:
+            time.sleep(get_random(config.delay_time_s) // 2)
+        else:
+            time.sleep(config.delay_time_s // 2)
         return True
     except Exception as e:
         logger.error(f"填写回答失败: {e}")

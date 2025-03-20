@@ -20,7 +20,10 @@ def get_answer(question: str) -> str:
         completion = client.chat.completions.create(
             model=config.openai_model,
             messages=[
-                {"role": "system", "content": "请用简练中文回答，避免敏感内容"},
+                {
+                    "role": "system",
+                    "content": "你是一个严谨的中文学生，请你回答同学的问题来帮助同学，回答需满足：\n1. 用口语化中文，50字内分点回答\n2. 回避政治、暴力、伦理等敏感内容\n3. 若问题敏感，回复'此问题不便讨论'\n4. 禁用Markdown格式\n请确保内容符合中国法律法规。",
+                },
                 {"role": "user", "content": f"问题：{question}"},
             ],
             temperature=config.temperature,
@@ -104,15 +107,11 @@ def fill_answer_content(page2: Page, answer: str) -> bool:
     try:
         textbox = page2.get_by_role("textbox", name="请输入您的回答")
         textbox.click()
-        if config.enabled_random_time:
+        if(config.enabled_random_time):
             time.sleep(get_random(config.delay_time_s) // 2)
         else:
-            time.sleep(config.delay_time_s // 2)
+            time.sleep(config.delay_time_s//2)
         textbox.fill(answer)
-        if config.enabled_random_time:
-            time.sleep(get_random(config.delay_time_s) // 2)
-        else:
-            time.sleep(config.delay_time_s // 2)
         return True
     except Exception as e:
         logger.error(f"填写回答失败: {e}")
@@ -123,6 +122,11 @@ def submit_answer(page2: Page) -> bool:
     """提交回答并关闭页面"""
     try:
         page2.get_by_text("立即发布").click()
+        if(config.enabled_random_time):
+            time.sleep(get_random(config.delay_time_s) // 2)
+        else:
+            time.sleep(config.delay_time_s//2)
+        logger.info("发布成功")
         page2.close()
         return True
     except Exception as e:

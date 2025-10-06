@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 ### 📁 配置文件结构
 
-⚠️ 对象键值对使用冒号结构表示 key: value，**冒号后面要加一个空格**。
+⚠️ 对象键值对使用冒号结构表示 key: value，**`冒号后面要加一个空格`**（请务必注意 YAML 语法细节，避免配置出错）。
 
 ```yaml
 # config.yaml

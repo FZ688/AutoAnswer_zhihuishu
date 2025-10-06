@@ -31,16 +31,20 @@ def open_browser(playwright) -> tuple[Browser, BrowserContext]:
     """
     try:
         # 使用Chromium内核启动浏览器
-        browser = playwright.chromium.launch(
-            channel=config.driver,  # 使用配置中指定的浏览器渠道
-            headless=False,  # 可视化模式运行
-            args=[
+        launch_kwargs = {
+            "channel": config.driver,
+            "headless": False,
+            "args": [
                 "--disable-backgrounding-occluded-windows",
                 "--disable-renderer-backgrounding",
-                "--start-minimized"  # 启动时最小化
+                "--start-minimized", 
                 "--disable-blink-features=AutomationControlled",
-            ],  # 禁用自动化检测特征
-        )
+            ],
+        }
+        if config.browser_path:
+            launch_kwargs["executable_path"] = config.browser_path
+        # 启动浏览器
+        browser = playwright.chromium.launch(**launch_kwargs)
         # 创建新的浏览器上下文
         context = browser.new_context()
         # 加载反检测脚本（避免被识别为自动化工具）

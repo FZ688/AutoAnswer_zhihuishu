@@ -20,6 +20,7 @@ class Config:
         self.browser_path: str | None = str(config["option"].get("browser_path", None))
         self.delay_time_s: int = int(config["option"]["delay_time_s"])
         self.enabled_random_time: bool = config["option"]["enabled_random_time"]
+        self.enabled_slider_verify: bool = config["option"]["enabled_slider_verify"]
         self.question_classification: int = int(
             config["option"]["question_classification"]
         )

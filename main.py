@@ -1,7 +1,9 @@
-import re
 import asyncio
-from playwright.sync_api import (
-    sync_playwright,
+import time
+import numpy as np
+import cv2
+from playwright.async_api import (
+    async_playwright,
     Page,
     Playwright,
     Browser,
@@ -15,13 +17,13 @@ from src.logger import Logger
 from src.crawler import crawl_popular_question, crawl_latest_question
 from src.answer import answer
 from src.utils import load_cookies, save_cookies
-import time
+from src.slider import slider_verify
 
 config = Config()
 logger = Logger()
 
 
-def open_browser(playwright) -> tuple[Browser, BrowserContext]:
+async def open_browser(playwright) -> tuple[Browser, BrowserContext]:
     """启动浏览器并返回浏览器和上下文对象
     Args:
         playwright: Playwright实例
@@ -45,17 +47,17 @@ def open_browser(playwright) -> tuple[Browser, BrowserContext]:
         if config.browser_path:
             launch_kwargs["executable_path"] = config.browser_path
         # 启动浏览器
-        browser = playwright.chromium.launch(**launch_kwargs)
+        browser = await playwright.chromium.launch(**launch_kwargs)
         # 创建新的浏览器上下文
-        context = browser.new_context()
+        context = await browser.new_context()
         # 加载反检测脚本（避免被识别为自动化工具）
         with open("scripts/stealth.min.js", "r", encoding="utf-8") as f:
             stealth_js = f.read()
-        context.add_init_script(stealth_js)
+        await context.add_init_script(stealth_js)
         # 加载本地Cookie
         cookies = load_cookies("res/cookies.json")
         if cookies:
-            context.add_cookies(cookies)  
+            await context.add_cookies(cookies)  
             logger.info("已加载本地Cookie，尝试免密登录")
         else:
             logger.info("未找到本地Cookie，将进行手动登录")
@@ -65,7 +67,7 @@ def open_browser(playwright) -> tuple[Browser, BrowserContext]:
         raise
 
 
-def login(page: Page,context: BrowserContext) -> Page:
+async def login(page: Page,context: BrowserContext) -> Page:
     """登录到智慧树网
     Args:
         page: Playwright页面对象
@@ -77,7 +79,7 @@ def login(page: Page,context: BrowserContext) -> Page:
     """
     try:
         # 访问登录页面（设置30秒超时）
-        page.goto(config.login_url, timeout=30000)
+        await page.goto(config.login_url, timeout=30000)
         # 首次检查URL：如果不含"login"，说明Cookie有效
         if "login" not in page.url:
             logger.info("检测到已通过Cookie登录，跳过手动登录")
@@ -86,18 +88,32 @@ def login(page: Page,context: BrowserContext) -> Page:
         
         # 填写用户名和密码
         username_input = page.get_by_role("textbox", name="请输入手机号")
-        username_input.fill(str(config.username), timeout=10000)
+        await username_input.fill(str(config.username), timeout=10000)
         password_input = page.get_by_role("textbox", name="请输入密码")
-        password_input.fill(str(config.password), timeout=10000)
+        await password_input.fill(str(config.password), timeout=10000)
 
         # 点击登录按钮
-        page.get_by_text("登 录").click(timeout=5000)
-        logger.warn("请手动完成验证码验证！")  # 需要人工干预验证码
-
+        await page.get_by_text("登 录").click(timeout=5000)
+        # logger.warn("请手动完成验证码验证！")  # 需要人工干预验证码
+        # 滑块验证（异步环境直接调用异步函数）config.enabled_slider_verify控制是否启用自动滑块验证
+        if not config.enabled_slider_verify:
+            logger.warn("请手动完成验证码验证！")# 给30秒手动处理时间
+        else:
+            logger.info("尝试自动处理滑块验证码...")
+            try:
+                await page.wait_for_selector(".yidun_bgimg", timeout=10000)
+                logger.info("检测到滑块验证码，尝试自动验证...")
+                await slider_verify(page, [np, cv2])  # 直接await异步函数
+            except TimeoutError:
+                logger.info("未检测到滑块验证码，继续登录流程")
+            except Exception as e:
+                logger.error(f"滑块验证过程出错: {str(e)}")
+                logger.warn("请手动完成验证码验证！")
+                await page.wait_for_timeout(30000)  # 给30秒手动处理时间
         # 等待网络空闲（最长等待60秒）
-        page.wait_for_load_state("networkidle", timeout=60000)
+        await page.wait_for_load_state("networkidle", timeout=60000)
         # 确认登录后再保存Cookie（此时URL已无"login"，确保有效）
-        cookies = context.cookies()
+        cookies = await context.cookies()
         save_cookies(cookies, "res/cookies.json")
         logger.info("已保存有效登录Cookie到: res/cookies.json")
         logger.info("登录成功！")
@@ -110,54 +126,54 @@ def login(page: Page,context: BrowserContext) -> Page:
         raise
 
 
-def main():
+async def main():
     start_time = time.time()  # 总开始时间
 
-    with sync_playwright() as playwright:
+    async with async_playwright() as playwright:
         try:
             # 初始化浏览器
-            browser, context = open_browser(playwright)
+            browser, context = await open_browser(playwright)
 
             # 登录操作
-            login_page = context.new_page()
+            login_page = await context.new_page()
             login_start = time.time()  # 登录计时开始
-            login(login_page,context)
+            await login(login_page,context)
             logger.info(f"登录耗时: {time.time() - login_start:.2f}秒")  # 记录登录耗时
-            login_page.close()
+            await login_page.close()
 
             # 遍历课程
             for index, course_url in enumerate(config.courses):
                 course_start = time.time()  # 单课程计时开始
-                page = context.new_page()
+                page = await context.new_page()
                 try:
                     logger.info(f"开始处理课程 {index+1}/{len(config.courses)}")
 
                     # 爬取问题计时
                     crawl_start = time.time()
                     if config.question_classification == 0:
-                        questions = crawl_popular_question(page, course_url)
+                        questions = await crawl_popular_question(page, course_url)
                     else:
-                        questions = crawl_latest_question(page, course_url)
+                        questions = await crawl_latest_question(page, course_url)
                     logger.info(f"问题爬取耗时: {time.time() - crawl_start:.2f}秒")
 
                     # 回答问题计时
                     answer_start = time.time()
-                    answer(page, questions)
+                    await answer(page, questions)
                     logger.info(f"回答处理耗时: {time.time() - answer_start:.2f}秒")
 
                     logger.info(f"成功完成课程: {course_url}")
                 except Exception as e:
                     logger.error(f"课程处理失败: {course_url} - {str(e)}")
                 finally:
-                    page.close()
+                    await page.close()
                     # 记录单课程耗时
                     logger.info(
                         f"课程{index+1}总耗时: {time.time() - course_start:.2f}秒\n"
                     )
 
         finally:
-            context.close()
-            browser.close()
+            await context.close()
+            await browser.close()
             total_time = time.time() - start_time  # 计算总耗时
             logger.info(f"任务总耗时: {total_time:.2f}秒")
             print(
@@ -178,4 +194,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

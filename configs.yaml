@@ -2,15 +2,30 @@ user:
   name:
   password:
 option:
-  driver: msedge
+  # 浏览器类型（必须小写）：
+  # [chrome|chrome-beta|chrome-dev|chrome-canary|msedge|msedge-beta...]
+  driver: chrome
+  # 浏览器执行路径示例：
+  # Windows: "C:\\Users\\Administrator\\AppData\\Local\\Chromium\\Application\\chrome.exe"
+  # macOS: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   browser_path:
-  #太小会被禁言
-  delay_time_s: 10
-  enabled_random_time: True
-  question_classification: 1
+  # 延迟设置策略：
+  delay_time_s: 10 # 回答问题等待时间(8-15 秒推荐)，太小会被禁言
+  enabled_random_time: True # 启用 ±50%随机偏移，默认True
+  # 问题筛选模式：
+  question_classification: 1 # 0=热门问题 1=最新问题，默认1
+  #是否启用登录滑块识别，默认为True
+  enabled_slider_verify: True
 
+# 课程链接配置
+# 获取方法：
+  # 1. 登录智慧树网页版
+
+  # 2. 进入目标课程问答区
+
+  # 3. 复制浏览器地址栏完整 URL
 question-urls:
-  -
+  - 
   -
   -
   -
@@ -23,5 +38,5 @@ OpenAI:
   # base_url: "http://localhost:11434/v1"
   # api_key: "ollama"
   # model: "deepseek-r1:1.5b"
-  max_tokens: 1000
-  temperature: 0.3
+  max_tokens: 1000 # 回答最大长度(200-1500)
+  temperature: 0.3 # 控制模型输出的随机性(0.1-1.0)
